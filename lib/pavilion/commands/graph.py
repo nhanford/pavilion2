@@ -157,14 +157,27 @@ class GraphCommand(Command):
             output.fprint(self.errfile, "Test filtering resulted in an empty list.")
             return errno.EINVAL
 
+# added
+        # args.y always had a size of 1 no matter how many tests were being plotted
+        # so I multiplied it by the length of tests // 2
+        # did that because the length of tests is N tests * 2 (?)
+        args.y = args.y * (len(tests) // 2)
+
+
         # Build respective evaluation dictionaries.
         x_eval = {'x': args.x}
         y_evals = {'y' + str(i): args.y[i] for i in range(len(args.y))}
+
         stats_dict = {key: {'x': [], 'y': []} for key in y_evals}
+
+# added
+        # made a list of y_evals keys so they could be indexed
+        keys_list = list(y_evals.keys())
 
         # Check to ensure all evaluations are valid.
         all_evals = y_evals.copy()
         all_evals.update(x_eval)
+
 
         try:
             check_evaluations(all_evals)
@@ -178,11 +191,32 @@ class GraphCommand(Command):
 
         # Populate graph data dict with evaluation data from all tests provided.
         graph_data = {}
-        for test in tests:
+# added
+        # index for the keys list
+        index = 0
+
+
+# changed
+        # Modified to only iterate through first half of list instead of looping
+        # through tests because tests contains a duplicate of every test
+        for test in tests[: len(tests) // 2]:
             try:
+# changed
+                # added keys_list and index parameters
                 test_graph_data = GraphCommand.gather_graph_data(x_eval,
                                                                  y_evals,
-                                                                 test.results)
+                                                                 test.results,
+                                                                 keys_list,
+                                                                 index)
+# added
+                # increments index used by key list
+                index += 1
+
+# TEST!!!!!!!!!!!!
+#                print("Inside loop graph data after gather:\n", test_graph_data)
+#                print("\nEND\n")
+
+
             except InvalidEvaluationError as err:
                 output.fprint(self.errfile, "Error gathering graph data for test {}."
                               .format(test.id), err, color=output.YELLOW)
@@ -195,14 +229,20 @@ class GraphCommand(Command):
 
             graph_data = GraphCommand.combine_graph_data(graph_data,
                                                          test_graph_data)
+# TEST!!!!!!!!!!!!
+#            print("Inside loop graph data after combine:\n", graph_data)
+#            print("\nEND\n")
+
 
         graph_data = collections.OrderedDict(sorted(graph_data.items()))
+        print("After loop graph data:\n", graph_data, "\nEND\n")
 
         # Graph the data.
         try:
             self.graph(args.xlabel, args.ylabel, y_evals, graph_data,
                        stats_dict, args.average, colormap,
                        args.outfile, args.dimensions)
+
         except PlottingError as err:
             output.fprint(self.errfile, "Error while graphing data.", err,
                           color=output.RED)
@@ -225,8 +265,10 @@ class GraphCommand(Command):
 
         return colormap
 
+# changed
+    # added keys_list and index variables
     @staticmethod
-    def gather_graph_data(x_eval, y_evals, test_results) -> Dict:
+    def gather_graph_data(x_eval, y_evals, test_results, keys_list, index) -> Dict:
         """
         Gather and format a test run objects results.
 
@@ -262,6 +304,7 @@ class GraphCommand(Command):
 
             for key in y_evals.keys():
                 evaluations.update({key: test_results[key]})
+
             graph_data[x_vals] = evaluations
 
         # X value evaluations should only result in a list when graphing
@@ -282,8 +325,12 @@ class GraphCommand(Command):
                 x_val = x_vals[i]
 
                 evaluations = {}
-                for key in y_evals.keys():
-                    if not isinstance(test_results[key], list):
+# changed
+                # got rid of for loop, changed to check that keys_list not empty
+                if keys_list: #for key in y_evals.keys():
+# changed
+                    # was test_results[key] now keys_list[index]
+                    if not isinstance(test_results[keys_list[index]], list):
                         raise ResultTypeError("y value evaluation '{}' "
                                               "resulted in {} '{}'. Since x "
                                               "value evaluation resulted in a "
@@ -292,7 +339,9 @@ class GraphCommand(Command):
                                                       type(test_results[key])
                                                       .__name__,
                                                       test_results[key]))
-                    evaluations.update({key: test_results[key][i]})
+# changed
+#                   from: evaluations.update({key: test_results[key][i]}) to
+                    evaluations.update({keys_list[index]: test_results[keys_list[index]][i]})
 
                 graph_data[x_val] = evaluations
 
@@ -301,7 +350,6 @@ class GraphCommand(Command):
                                   " type {}, '{}'."
                                   .format(x_eval, type(x_vals).__name__,
                                           x_vals))
-
         return graph_data
 
     @staticmethod
@@ -366,6 +414,8 @@ class GraphCommand(Command):
                     matplotlib.pyplot.scatter(x=x_list, y=y_list, marker="o",
                                               color=color,
                                               label=label)
+# added
+#                    matplotlib.pyplot.xlim(min(x_list), max(x_list))
                 except ValueError:
                     raise PlottingError("Evaluations '{}, {}' resulted in "
                                         "un-plottable values.\n"
