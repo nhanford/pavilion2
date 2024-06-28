@@ -3,6 +3,7 @@
 import collections
 import errno
 import pathlib
+import numpy
 import re
 import statistics
 from argparse import RawDescriptionHelpFormatter
@@ -65,7 +66,12 @@ class GraphCommand(Command):
                 "  4. Labels for both the X axis and Y axis can be \n"
                 "     added using the '--xlabel' and '--ylabel'\n"
                 "     flags, respectively.\n\n"
-                "  5. Specify the filename to use when storing the \n"
+# added 5.
+                "  5. Legends should be entered in the same order as\n"
+                "     their corresponding test. Must be entered as \n"
+                "     comma separated strings in the format(s): \n"
+                "     'Legend1,Legend2' OR 'Legend1','Legend2'\n\n"
+                "  6. Specify the filename to use when storing the \n"
                 "     generated graph using the '--outfile' flag. \n"
                 "     Note: The graph will be saved in the current\n"
                 "     directory the user is in.\n\n"
@@ -119,6 +125,12 @@ class GraphCommand(Command):
             '--dimensions', action='store', default='',
             help='Specify the image size. Expects a \'width x height\' format.'
         )
+# added
+        parser.add_argument(
+            '--legend', action='store', default='',
+            help='Specify the legend values. Expects comma separated strings.'
+        )
+
 
     def run(self, pav_cfg, args):
         """Create a graph."""
@@ -162,6 +174,8 @@ class GraphCommand(Command):
         # so I multiplied it by the length of tests // 2
         # did that because the length of tests is N tests * 2 (?)
         args.y = args.y * (len(tests) // 2)
+        # capture the legend strings, convert to list
+        args.legend = list(args.legend.split(","))
 
 
         # Build respective evaluation dictionaries.
@@ -212,10 +226,6 @@ class GraphCommand(Command):
                 # increments index used by key list
                 index += 1
 
-# TEST!!!!!!!!!!!!
-#                print("Inside loop graph data after gather:\n", test_graph_data)
-#                print("\nEND\n")
-
 
             except InvalidEvaluationError as err:
                 output.fprint(self.errfile, "Error gathering graph data for test {}."
@@ -229,19 +239,15 @@ class GraphCommand(Command):
 
             graph_data = GraphCommand.combine_graph_data(graph_data,
                                                          test_graph_data)
-# TEST!!!!!!!!!!!!
-#            print("Inside loop graph data after combine:\n", graph_data)
-#            print("\nEND\n")
 
 
         graph_data = collections.OrderedDict(sorted(graph_data.items()))
-        print("After loop graph data:\n", graph_data, "\nEND\n")
 
         # Graph the data.
         try:
             self.graph(args.xlabel, args.ylabel, y_evals, graph_data,
                        stats_dict, args.average, colormap,
-                       args.outfile, args.dimensions)
+                       args.outfile, args.dimensions, args.legend)
 
         except PlottingError as err:
             output.fprint(self.errfile, "Error while graphing data.", err,
@@ -377,9 +383,9 @@ class GraphCommand(Command):
                     graph_data[key][evl].extend([value])
 
         return graph_data
-
+# added legends variable
     def graph(self, xlabel, ylabel, y_evals, graph_data, stats_dict,
-              averages, colormap, outfile, dimensions):
+              averages, colormap, outfile, dimensions, legends):
         """
         Graph the data collected from all test runs provided. Graph_data has
         formatted everything so you can graph every y value for each respective
@@ -411,11 +417,12 @@ class GraphCommand(Command):
                 x_list = [x_val] * len(y_list)
 
                 try:
-                    matplotlib.pyplot.scatter(x=x_list, y=y_list, marker="o",
-                                              color=color,
-                                              label=label)
-# added
-#                    matplotlib.pyplot.xlim(min(x_list), max(x_list))
+                    matplotlib.pyplot.scatter(x_list, y_list, marker="o",
+                                                                  color=color,
+                                                                  label=label)
+# added   - gets rid of scientific notation
+                    matplotlib.pyplot.ticklabel_format(style='plain')
+
                 except ValueError:
                     raise PlottingError("Evaluations '{}, {}' resulted in "
                                         "un-plottable values.\n"
@@ -441,7 +448,13 @@ class GraphCommand(Command):
 
         matplotlib.pyplot.ylabel(ylabel)
         matplotlib.pyplot.xlabel(xlabel)
-        matplotlib.pyplot.legend()
+# added
+        # check that the list of legends is not empty
+        if(legends != ['']):
+        # loop through the list of legend names and plot them
+            matplotlib.pyplot.legend([name for name in legends])
+        else:
+            matplotlib.pyplot.legend()
 
         fig = matplotlib.pyplot.gcf()
 
