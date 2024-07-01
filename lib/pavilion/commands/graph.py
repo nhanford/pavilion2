@@ -66,12 +66,13 @@ class GraphCommand(Command):
                 "  4. Labels for both the X axis and Y axis can be \n"
                 "     added using the '--xlabel' and '--ylabel'\n"
                 "     flags, respectively.\n\n"
-# added 5.
+# added 5 & 6
                 "  5. Legends should be entered in the same order as\n"
                 "     their corresponding test. Must be entered as \n"
                 "     comma separated strings in the format(s): \n"
                 "     'Legend1,Legend2' OR 'Legend1','Legend2'\n\n"
-                "  6. Specify the filename to use when storing the \n"
+                "  6. Enter the plot title in string format\n\n"
+                "  7. Specify the filename to use when storing the \n"
                 "     generated graph using the '--outfile' flag. \n"
                 "     Note: The graph will be saved in the current\n"
                 "     directory the user is in.\n\n"
@@ -130,6 +131,11 @@ class GraphCommand(Command):
             '--legend', action='store', default='',
             help='Specify the legend values. Expects comma separated strings.'
         )
+        parser.add_argument(
+            '--title', action='store', default='',
+            help='Specify the plot title. Expects a string.'
+        )
+
 
 
     def run(self, pav_cfg, args):
@@ -247,7 +253,7 @@ class GraphCommand(Command):
         try:
             self.graph(args.xlabel, args.ylabel, y_evals, graph_data,
                        stats_dict, args.average, colormap,
-                       args.outfile, args.dimensions, args.legend)
+                       args.outfile, args.dimensions, args.legend, args.title)
 
         except PlottingError as err:
             output.fprint(self.errfile, "Error while graphing data.", err,
@@ -383,9 +389,9 @@ class GraphCommand(Command):
                     graph_data[key][evl].extend([value])
 
         return graph_data
-# added legends variable
+# added legends & title variables
     def graph(self, xlabel, ylabel, y_evals, graph_data, stats_dict,
-              averages, colormap, outfile, dimensions, legends):
+              averages, colormap, outfile, dimensions, legends, title):
         """
         Graph the data collected from all test runs provided. Graph_data has
         formatted everything so you can graph every y value for each respective
@@ -415,6 +421,7 @@ class GraphCommand(Command):
                 labels.add(label)
 
                 x_list = [x_val] * len(y_list)
+
 
                 try:
                     matplotlib.pyplot.scatter(x_list, y_list, marker="o",
@@ -449,12 +456,15 @@ class GraphCommand(Command):
         matplotlib.pyplot.ylabel(ylabel)
         matplotlib.pyplot.xlabel(xlabel)
 # added
+        matplotlib.pyplot.title(title)
+# added
         # check that the list of legends is not empty
         if(legends != ['']):
         # loop through the list of legend names and plot them
             matplotlib.pyplot.legend([name for name in legends])
         else:
             matplotlib.pyplot.legend()
+
 
         fig = matplotlib.pyplot.gcf()
 
