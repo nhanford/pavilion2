@@ -426,9 +426,10 @@ class GraphCommand(Command):
                 try:
                     matplotlib.pyplot.scatter(x_list, y_list, marker="o",
                                                                   color=color,
-                                                                  label=label)
-# added   - gets rid of scientific notation
-                    matplotlib.pyplot.ticklabel_format(style='plain')
+                                                                  label=label
+                                                                   )
+# added   - change x-axis to log format
+                    matplotlib.pyplot.xscale('log')
 
                 except ValueError:
                     raise PlottingError("Evaluations '{}, {}' resulted in "
