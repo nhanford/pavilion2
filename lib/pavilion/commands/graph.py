@@ -410,9 +410,14 @@ class GraphCommand(Command):
         'width x height' format.
         :return:
         """
-
+# added
+        markers = ['o', '*', 'x', '>']
         labels = set()
+
         for x_val, eval_dict in graph_data.items():
+# added
+            # index to be used for the markers
+            index = 0
             for evl, y_list in eval_dict.items():
                 color = colormap[evl]['plot']
 
@@ -420,16 +425,23 @@ class GraphCommand(Command):
                 label = label if label not in labels else ""
                 labels.add(label)
 
+
                 x_list = [x_val] * len(y_list)
 
 
                 try:
-                    matplotlib.pyplot.scatter(x_list, y_list, marker="o",
+# changed
+                    # changed to markers[index] from "o"
+                    matplotlib.pyplot.scatter(x_list, y_list, marker=markers[index],
                                                                   color=color,
-                                                                  label=label
-                                                                   )
+                                                                  label=label)
+# added
+                    # increment the index to be used for the marker
+                    index += 1
+
 # added   - change x-axis to log format
                     matplotlib.pyplot.xscale('log')
+
 
                 except ValueError:
                     raise PlottingError("Evaluations '{}, {}' resulted in "
@@ -444,6 +456,7 @@ class GraphCommand(Command):
                 if y_evals[evl] in averages:
                     stats_dict[evl]['x'].append(x_val)
                     stats_dict[evl]['y'].append(statistics.mean(y_list))
+
 
         for evl, values in stats_dict.items():
             if y_evals[evl] not in averages:
