@@ -51,9 +51,11 @@ class GraphCommand(Command):
                 "  1. Determine which test run results you want to\n"
                 "     graph. Provide these test runs specifically\n"
                 "     using test IDs or filter test runs using the\n"
-                "     built in test filtering flags. You can use the result"
-                "     command, which takes the same arguments, to narrow "
-                "     the results down.\n\n"
+                "     built in test filtering flags. You can use the result\n"
+                "     command, which takes the same arguments, to narrow\n"
+# added the last sentence here
+                "     the results down. When using the legend command\n"
+                "     tests must be entered in descending order\n\n"
                 "  2. Add the values to be used on the X axis using\n"
                 "     the '-x' flag. Each value must be a numeric\n"
                 "     key from a test run's result dictionary or any\n"
@@ -68,9 +70,13 @@ class GraphCommand(Command):
                 "     flags, respectively.\n\n"
 # added 5 & 6
                 "  5. Legends should be entered in the same order as\n"
-                "     their corresponding test. Must be entered as \n"
-                "     comma separated strings in the format(s): \n"
-                "     'Legend1,Legend2' OR 'Legend1','Legend2'\n\n"
+                "     their corresponding test (descending order).\n"
+                "     Must be entered as comma separated strings\n"
+                "     in the format(s): 'Legend1,Legend2' OR\n"
+                "     'Legend1','Legend2'\n"
+                "     NOTE: Tests are sorted by ID. If tests are\n"
+                "     not entered in descending order the legends\n"
+                "     will not be labeled properly\n\n"
                 "  6. Enter the plot title in string format\n\n"
                 "  7. Specify the filename to use when storing the \n"
                 "     generated graph using the '--outfile' flag. \n"
@@ -439,9 +445,9 @@ class GraphCommand(Command):
                     # increment the index to be used for the marker
                     index += 1
 
-# added   - change x-axis to log format
+# added   - change x-axis and y-axis to log format
                     matplotlib.pyplot.xscale('log')
-
+                    matplotlib.pyplot.yscale('log')
 
                 except ValueError:
                     raise PlottingError("Evaluations '{}, {}' resulted in "
@@ -470,7 +476,10 @@ class GraphCommand(Command):
         matplotlib.pyplot.ylabel(ylabel)
         matplotlib.pyplot.xlabel(xlabel)
 # added
+        matplotlib.pyplot.grid()
+# added
         matplotlib.pyplot.title(title)
+
 # added
         # check that the list of legends is not empty
         if(legends != ['']):
