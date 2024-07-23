@@ -417,7 +417,7 @@ class GraphCommand(Command):
         :return:
         """
 # added
-        markers = ['o', '*', 'x', '>']
+        markers = ['o', '*', 'x', '>', 'P', '1']
         labels = set()
 
         for x_val, eval_dict in graph_data.items():
@@ -442,8 +442,12 @@ class GraphCommand(Command):
                                                                   color=color,
                                                                   label=label)
 # added
-                    # increment the index to be used for the marker
-                    index += 1
+                    # reset marker index to zero if it is at end of list
+                    if index == len(markers) - 1:
+                       index = 0
+                    # otherwise, reset index to zero
+                    else:
+                       index += 1
 
 # added   - change x-axis and y-axis to log format
                     matplotlib.pyplot.xscale('log')
