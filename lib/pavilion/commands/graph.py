@@ -185,7 +185,7 @@ class GraphCommand(Command):
         # args.y always had a size of 1 no matter how many tests were being plotted
         # so I multiplied it by the length of tests // 2
         # did that because the length of tests is N tests * 2 (?)
-        args.y = args.y * (len(tests) // 2)
+        # args.y = args.y * (len(tests) // 2)
         # capture the legend strings, convert to list
         args.legend = list(args.legend.split(","))
 
@@ -450,7 +450,7 @@ class GraphCommand(Command):
                        index += 1
 
 # added   - change x-axis and y-axis to log format
-                    matplotlib.pyplot.xscale('log')
+                    matplotlib.pyplot.xscale('log', base=2)
                     matplotlib.pyplot.yscale('log')
 
                 except ValueError:
